@@ -61,7 +61,7 @@ cat /var/www/html/inventory.html
 if [ ! -f /etc/cron.d/automation ]
 then
         echo "Crontab automation is not set. Setting it up"
-        echo "0 8 * * * root /root/Automation_Project/automation.sh" > /etc/cron.d/automation
+        echo "0 8 * * * root /root/Ankesh_Automation_Project/automation.sh" > /etc/cron.d/automation
 else
         echo "Crontab is already set."
 fi
