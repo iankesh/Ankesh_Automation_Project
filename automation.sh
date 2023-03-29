@@ -33,8 +33,40 @@ else
         echo "Apache2 is already enabled."
 fi
 
+if [ ! -f /var/www/html/inventory.html ]
+then
+    echo "File inventory.html does not exist."
+    touch /var/www/html/inventory.html
+    echo -e "Log Type\tTime Created\tType\tSize" > /var/www/html/inventory.html
+else
+    echo "File inventory.html found."
+fi
+
 cd /var/log/apache2/ && tar -cvf /tmp/${myname}-httpd-logs-${timestamp}.tar *.log
 
 aws s3 \
 cp /tmp/${myname}-httpd-logs-${timestamp}.tar \
-s3://${s3_bucket}/${myname}-httpd-logs-${timestamp}.tar 
+s3://${s3_bucket}/${myname}-httpd-logs-${timestamp}.tar
+
+tarLogType="httpd-logs"
+tarFileName="${myname}-httpd-logs-${timestamp}.tar"
+tarFileLocation="/tmp/${tarFileName}"
+tarFileSize=$(ls -lh $tarFileLocation | awk '{print  $5}')
+tarFileType=$(echo ${tarFileName}| cut -d. -f2)
+
+#echo $tarLogType
+#echo $tarFileName
+#echo $tarFileLocation
+#echo $tarFileSize
+#echo $tarFileType
+
+echo -e "$tarLogType\t$timestamp\t$tarFileType\t$tarFileSize" >> /var/www/html/inventory.html
+cat /var/www/html/inventory.html
+
+if [ ! -f /etc/cron.d/automation ]
+then
+        echo "Crontab automation is not set. Setting it up"
+        echo "0 8 * * * root /root/Automation_Project/automation.sh" > /etc/cron.d/automation
+else
+        echo "Crontab is already set."
+fi
