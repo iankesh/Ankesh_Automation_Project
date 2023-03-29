@@ -18,50 +18,23 @@ fi
 apacheiServiceStatus=$(service --status-all | grep apache2 | awk '{print $2}')
 if [ "$apacheiServiceStatus" != "+" ]
 then
-        echo "Apache2 is not up, Starting and Enabling it."
+        echo "Apache2 is not up, Starting it."
         sudo systemctl restart apache2
-        sudo systemctl enable apache2
 else
         echo "Apache2 is already up."
 fi
 
-
-if [ ! -f /var/www/html/inventory.html ]
+apacheEnableStatus=$(service apache2 status | grep enabled | awk '{print $4}')
+if [ "$apacheEnableStatus" != "enabled;" ]
 then
-    echo "File inventory.html does not exist."
-    touch /var/www/html/inventory.html
-    echo -e "Log Type\tTime Created\tType\tSize" > /var/www/html/inventory.html
+        echo "Apache2 is not enabled, Enabling it."
+        sudo systemctl enable apache2
 else
-    echo "File inventory.html found."
+        echo "Apache2 is already enabled."
 fi
 
 cd /var/log/apache2/ && tar -cvf /tmp/${myname}-httpd-logs-${timestamp}.tar *.log
 
 aws s3 \
 cp /tmp/${myname}-httpd-logs-${timestamp}.tar \
-s3://${s3_bucket}/${myname}-httpd-logs-${timestamp}.tar
-
-
-tarLogType="httpd-logs"
-tarFileName="${myname}-httpd-logs-${timestamp}.tar"
-tarFileLocation="/tmp/${tarFileName}"
-tarFileSize=$(ls -lh $tarFileLocation | awk '{print  $5}')
-tarFileType=$(echo ${tarFileName}| cut -d. -f2)
-
-#echo $tarLogType
-#echo $tarFileName
-#echo $tarFileLocation
-#echo $tarFileSize
-#echo $tarFileType
-
-echo -e "$tarLogType\t$timestamp\t$tarFileType\t$tarFileSize" >> /var/www/html/inventory.html
-cat /var/www/html/inventory.html
-
-
-if [ ! -f /etc/cron.d/automation ]
-then
-        echo "Crontab automation is not set. Setting it up"
-        echo "0 8 * * * root /root/Automation_Project/automation.sh" > /etc/cron.d/automation
-else
-        echo "Crontab is already set."
-fi
+s3://${s3_bucket}/${myname}-httpd-logs-${timestamp}.tar 
